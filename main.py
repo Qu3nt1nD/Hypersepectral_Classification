@@ -4,8 +4,8 @@ from utils import viz_img, viz_results, create_block, plot_distribution
 import yaml
 from random import shuffle
 import argparse
-from datasets import IndianPinesDataset
-from models import PixelClassifier
+from datasets import IndianPinesDataset3D, IndianPinesDataset2D
+from models import PixelClassifier3D, PixelClassifier2D
 from torch.utils.data import DataLoader, random_split
 import torch
 import torch.nn as nn
@@ -15,6 +15,7 @@ from torchvision import transforms
 
 def main(args):
     train = args.train
+    nn_mode = args.nn_mode
 
     path_img = "./data/indian_pines/Indian_pines_corrected.mat"
     path_gt = "./data/indian_pines/Indian_pines_gt.mat"
@@ -43,14 +44,22 @@ def main(args):
     gt = file["indian_pines_gt"]
 
     print("Creating dataset")
-    dataset = IndianPinesDataset(img, gt, labels)
+    if nn_mode == "3D":
+        dataset = IndianPinesDataset3D(img, gt, labels)
+    elif nn_mode == "2D":
+        dataset = IndianPinesDataset2D(img, gt, labels)
+
     train_dataset, val_dataset = random_split(dataset, [0.9, 0.1])
 
     batch_size = 32
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    plot_distribution('./data_distribution.png', train_loader, val_loader)
 
-    model = PixelClassifier(nc=len(dataset.labels_list))
+    if nn_mode == "3D":
+        model = PixelClassifier3D(nc=len(dataset.labels_list))
+    elif nn_mode == "2D":
+        model = PixelClassifier2D(nc=len(dataset.labels_list))
 
     #block, label = next(iter(loader))
     #print(f"Block data : {block.shape}")
@@ -61,21 +70,25 @@ def main(args):
     #print(output.shape)
 
     if train:
-        lr = 0.1
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        lr = 0.001
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
         criterion = nn.CrossEntropyLoss()
 
-        num_epochs = 5
+        num_epochs = 500
         for epoch in range(num_epochs):
             model.train()
             epoch_loss = 0.0
 
-            for block, label in tqdm(train_loader):
+            for block, label in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
                 optimizer.zero_grad()
 
-                output = model(block.unsqueeze(dim=1))
+                if nn_mode == "3D":
+                    block = block.unsqueeze(dim=1)
+                output = model(block)
 
-                loss = criterion.forward(output.squeeze(), label)
+                if output.shape[0]!=1:
+                    output=output.squeeze()
+                loss = criterion.forward(output, label)
 
                 loss.backward()
                 optimizer.step()
@@ -85,22 +98,27 @@ def main(args):
             model.eval()
             epoch_vloss = 0.0
             with torch.no_grad():
-                for block, label in tqdm(val_loader):
-                    output = model(block.unsqueeze(dim=1))
-                    vloss = criterion.forward(output.squeeze(), label)
+                for block, label in val_loader:
+                    if nn_mode == "3D":
+                        block = block.unsqueeze(dim=1)
+                    output = model(block)
+                    if output.shape[0]!=1:
+                        output=output.squeeze()
+                    vloss = criterion.forward(output, label)
                     epoch_vloss += vloss.item()
             
             avg_loss = epoch_loss/len(train_loader)
             avg_vloss = epoch_vloss/len(val_loader)
 
             print(f"Training / Validation losses : {avg_loss} / {avg_vloss}")
-    
-    plot_distribution('./data_distribution.png', train_loader, val_loader)
+
     tp = 0
     fp = 0
     with torch.no_grad():
-        for block, label in tqdm(val_loader):
-            output = model(block.unsqueeze(dim=1))
+        for block, label in tqdm(val_loader, desc="Predicting all samples"):
+            if nn_mode == "3D":
+                block = block.unsqueeze(dim=1)
+            output = model(block)
             for o, l in zip(output.squeeze(), label.float()):
                 if o.argmax()==l.argmax():
                 #if float(round(o.item())) == l.item():
@@ -116,6 +134,8 @@ def main(args):
             if gt[i, j]:
                 pos = np.array([i, j])
                 block = create_block(img, pos)
+                if nn_mode == '2D':
+                    block = block.transpose(dim0=2, dim1=0)
                 pred = model(block.unsqueeze(dim=0))
                 results[i, j] = pred.argmax()
     viz_results("./results.png", gt, results, labels)
@@ -128,6 +148,9 @@ if __name__ == "__main__":
     parser.add_argument("--train",
                       action="store_true",
                       help="Specify if the model should be trained.")
+    parser.add_argument("--nn_mode",
+                      type=str,
+                      help="Specify the dimensions of the model. Accepts 2D or 3D.")
     args = parser.parse_args()
 
     main(args)
