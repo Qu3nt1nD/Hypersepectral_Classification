@@ -1,8 +1,10 @@
+import os
 import numpy as np
 from scipy import io
 from utils import viz_img, viz_results, create_block, plot_distribution
 import yaml
 from random import shuffle
+from datetime import datetime
 import argparse
 from datasets import IndianPinesDataset3D, IndianPinesDataset2D
 from models import PixelClassifier3D, PixelClassifier2D
@@ -20,6 +22,8 @@ def main(args):
     path_img = "./data/indian_pines/Indian_pines_corrected.mat"
     path_gt = "./data/indian_pines/Indian_pines_gt.mat"
     path_data = "./data/indian_pines/data.yaml"
+    save_path = "./runs/"+datetime.now().strftime('%m%d%H%M')
+    os.makedirs(save_path)
     file = io.loadmat(path_img)
     img = file["indian_pines_corrected"]
     #transform = transforms.Compose([
@@ -54,7 +58,7 @@ def main(args):
     batch_size = 32
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
-    plot_distribution('./data_distribution.png', train_loader, val_loader)
+    plot_distribution(save_path+'/data_distribution.png', train_loader, val_loader)
 
     if nn_mode == "3D":
         model = PixelClassifier3D(nc=len(dataset.labels_list))
@@ -70,11 +74,12 @@ def main(args):
     #print(output.shape)
 
     if train:
+        best_score = None
         lr = 0.001
+        num_epochs = 500
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
         criterion = nn.CrossEntropyLoss()
 
-        num_epochs = 500
         for epoch in range(num_epochs):
             model.train()
             epoch_loss = 0.0
@@ -111,6 +116,11 @@ def main(args):
             avg_vloss = epoch_vloss/len(val_loader)
 
             print(f"Training / Validation losses : {avg_loss} / {avg_vloss}")
+            # Save
+            if best_score is None or best_score > avg_vloss:
+                print("Saving model")
+                best_score = avg_vloss
+                torch.save(model.state_dict(), os.path.join(save_path, "best.pt"))
 
     tp = 0
     fp = 0
@@ -138,7 +148,7 @@ def main(args):
                     block = block.transpose(dim0=2, dim1=0)
                 pred = model(block.unsqueeze(dim=0))
                 results[i, j] = pred.argmax()
-    viz_results("./results.png", gt, results, labels)
+    viz_results(save_path+"/results.png", gt, results, labels)
 
 
 
