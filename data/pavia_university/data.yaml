@@ -1,0 +1,24 @@
+
+LABELS:
+  0: unknown
+  1: asphalt
+  2: meadows
+  3: gravel
+  4: trees
+  5: painted-metal-sheets
+  6: bare-soil
+  7: bitumen
+  8: self-blocking-bricks
+  9: shadows
+
+COLOR_PALETTE :
+    unknown : [0,0,0]
+    asphalt : [0,71,189]
+    meadows : [7,185,252]
+    gravel : [0,171,58]
+    trees : [255,179,0]
+    painted-metal-sheets : [255,230,59]
+    bare-soil : [253,71,3]
+    bitumen : [130,0,172]
+    self-blocking-bricks : [204,114,245]
+    shadows : [127, 127, 127]

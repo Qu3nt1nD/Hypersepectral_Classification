@@ -18,3 +18,22 @@ LABELS:
   14: woods
   15: buildings-grass-trees-drives
   16: stone-steel-towers
+
+COLOR_PALETTE :
+    unknown : [0,0,0]
+    alfalfa : [0,71,189]
+    corn-notill : [2,136,217]
+    corn-mintill : [7,185,252]
+    corn : [0,149,67]
+    grass-pastures : [0,171,58]
+    grass-trees : [154,240,0]
+    grass-pasture-mowed : [255,179,0]
+    hay-windrowed : [255,206,0]
+    oats : [255,230,59]
+    soybean-notill : [234,0,52]
+    soybean-mintill : [253,71,3]
+    soybean-clean : [255,130,42]
+    wheat : [130,0,172]
+    woods : [182,16,191]
+    buildings-grass-trees-drives : [204,114,245]
+    stone-steel-towers : [127, 127, 127]

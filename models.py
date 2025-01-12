@@ -36,18 +36,18 @@ class PixelClassifier3D(nn.Module):
 
 class PixelClassifier2D(nn.Module):
 
-    def __init__(self, nc:int):
+    def __init__(self, nc:int, num_features:int):
         super().__init__()
 
-        self.norm = nn.BatchNorm2d(num_features=200)
+        self.norm = nn.BatchNorm2d(num_features=num_features)
 
-        self.conv1 = nn.Conv2d(200, 300, kernel_size=(3,3), padding=1)
+        self.conv1 = nn.Conv2d(num_features, 300, kernel_size=(3,3), padding=1)
         self.conv2 = nn.Conv2d(300, 400, kernel_size=(3,3), padding=1)
         self.maxPool = nn.MaxPool2d(kernel_size=(2,2))
 
         self.layer1 = nn.Linear(5*5*400, 1000)
         self.layer2 = nn.Linear(1000, nc)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
         self.dropout = nn.Dropout(p=0.1)
 
