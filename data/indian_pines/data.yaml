@@ -1,4 +1,12 @@
 
+name : IndianPines
+
+path_img : ./data/indian_pines/Indian_pines_corrected.mat
+path_gt : ./data/indian_pines/Indian_pines_gt.mat
+mat_img_name : indian_pines_corrected
+mat_gt_name : indian_pines_gt
+
+num_features : 200
 
 LABELS:
   0: unknown

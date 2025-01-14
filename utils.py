@@ -28,7 +28,7 @@ def viz_img(img:np.ndarray, gt:np.ndarray, labels_list:dict, rgb_bands:tuple, co
     plt.axis('off')
 
 def viz_results(save_path, gt, pred, labels_list, color_palette:dict):
-    plt.figure(figsize=(8,4))
+    plt.figure()
 
     img_gt = np.zeros(shape=(gt.shape[0], gt.shape[1], 3))
     for ind in labels_list.keys():

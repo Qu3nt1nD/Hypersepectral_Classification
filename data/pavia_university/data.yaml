@@ -1,4 +1,13 @@
 
+name : PaviaU
+
+path_img : ./data/pavia_university/PaviaU.mat
+path_gt : ./data/pavia_university/PaviaU_gt.mat
+mat_img_name : paviaU
+mat_gt_name : paviaU_gt
+
+num_features : 103
+
 LABELS:
   0: unknown
   1: asphalt
