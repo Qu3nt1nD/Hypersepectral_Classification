@@ -29,7 +29,7 @@ def main(args):
     verbose = args.verbose
 
 
-    name, dataset, num_features, color_palette = create_dataset(data, nn_mode)
+    name, dataset, num_features, color_palette = create_dataset(data, nn_mode, skip_classes=[0])
 
     name = args.name if args.name is not None else name
 
@@ -61,7 +61,7 @@ def main(args):
             model.train()
             epoch_loss = 0.0
 
-            for block, label in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
+            for block, label, _ in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
                 optimizer.zero_grad()
 
                 if nn_mode == "3D":
@@ -81,7 +81,7 @@ def main(args):
             epoch_vloss = 0.0
             y_test, y_pred = [], []
             with torch.no_grad():
-                for block, label in val_loader:
+                for block, label, _ in val_loader:
                     if nn_mode == "3D":
                         block = block.unsqueeze(dim=1)
                     output = model(block)
@@ -109,7 +109,7 @@ def main(args):
     y_test, y_pred = [], []
     model.eval()
     with torch.no_grad():
-        for block, label in val_loader:
+        for block, label, _ in val_loader:
             if nn_mode == "3D":
                 block = block.unsqueeze(dim=1)
             output = model(block)
@@ -123,27 +123,28 @@ def main(args):
                     fp += 1
         print(f"TP : {tp}/{tp+fp}")
 
-        # Confusion Matrix
-        print(f'test : {np.min(y_test)}/{np.max(y_test)}\npred : {np.min(y_pred)}/{np.max(y_pred)}')
-        cm = confusion_matrix(y_test, y_pred, labels=list(dataset.labels_list.keys()))
-        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(dataset.labels_list.keys()))
-        disp.plot(cmap=plt.cm.RdPu)
-        plt.title('Confusion Matrix')
-        plt.savefig(save_path+"/confusion_matrix.png")
+    # Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred, labels=list(dataset.labels_list.keys()))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(dataset.labels_list.keys()))
+    disp.plot(cmap=plt.cm.RdPu)
+    plt.title('Confusion Matrix')
+    plt.savefig(save_path+"/confusion_matrix.png")
 
-        # Show predictions only for labeled pixels
-        print("Predicting on all pixels...")
-        shape = dataset.gt.shape
-        results = np.zeros(shape=shape)
-        for j in range(shape[0]):
-            for i in range(shape[1]):
-                if dataset.gt[j, i] or full_map:
-                    pos = np.array([j, i])
-                    block = create_block(dataset.data, pos, num_features)
-                    if nn_mode == '2D':
-                        block = block.transpose(dim0=2, dim1=0)
-                    pred = model(block.unsqueeze(dim=0))
-                    results[j, i] = pred.argmax()
+    # Show predictions only for labeled pixels
+    sc = [] if full_map else [0]
+    full_dataset = create_dataset(data, nn_mode, skip_classes=sc)[1]
+    full_loader = DataLoader(full_dataset, batch_size=batch_size, shuffle=True)
+    shape = full_dataset.gt.shape
+    results = np.zeros(shape=shape)
+    for block, label, pos in tqdm(full_loader, desc='Predicting on all pixels'):
+        if nn_mode == "3D":
+            block = block.unsqueeze(dim=1)
+        output = model(block)
+        if output.shape[0]!=1:
+            output=output.squeeze()
+        for o, p in zip(output, pos):
+            results[p[0], p[1]] = o.argmax()
+
     viz_results(save_path+"/results.png", dataset.gt, results, dataset.labels_list, color_palette)
 
 

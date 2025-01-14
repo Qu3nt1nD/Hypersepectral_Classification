@@ -84,7 +84,7 @@ def compute_distribution(dataloader, labels_list:dict):
     distrib = {}
     for c in labels_list.values():
         distrib[c] = 0
-    for _, labels in dataloader:
+    for _, labels, _ in dataloader:
         for l in labels:
             ind_l = int(l.argmax().item())
             distrib[list(labels_list.values())[ind_l]] += 1

@@ -5,7 +5,7 @@ import yaml
 from scipy import io
 
 
-def create_dataset(data_file_path:str, mode:str):
+def create_dataset(data_file_path:str, mode:str, skip_classes:list=[]):
 
     # gather dataset information from data.yaml file
     with open(data_file_path, 'r') as stream:
@@ -24,16 +24,16 @@ def create_dataset(data_file_path:str, mode:str):
 
 
     if mode == '2D':
-        dataset = Dataset2D(img, gt, labels)
+        dataset = Dataset2D(img, gt, labels, skip_classes)
     elif mode == '3D':
-        dataset = Dataset3D(img, gt, labels)
+        dataset = Dataset3D(img, gt, labels, skip_classes)
     
     return dataset_name, dataset, num_features, color_palette
 
 
 class Dataset3D(Dataset):
 
-    def __init__(self, data:np.ndarray, gt:np.ndarray, labels_list:dict):
+    def __init__(self, data:np.ndarray, gt:np.ndarray, labels_list:dict, skip_classes:list=[]):
         super().__init__()
 
         self.data = data
@@ -42,10 +42,11 @@ class Dataset3D(Dataset):
 
         # create a list of pixels represented by a tuple of their coordinates
         self.pixels = []
-        for cl in list(self.labels_list.keys())[1:]: # from 2nd element to ignore pixels of unknown class 0
-            ys, xs = np.where(self.gt == cl) # yields an array of positons matching the current class
-            for y, x in zip(ys, xs):
-                self.pixels.append(np.array([y, x]))
+        for cl in list(self.labels_list.keys()):
+            if cl not in skip_classes:
+                ys, xs = np.where(self.gt == cl) # yields an array of positons matching the current class
+                for y, x in zip(ys, xs):
+                    self.pixels.append(np.array([y, x]))
 
     def __len__(self):
         return len(self.pixels)
@@ -67,7 +68,7 @@ class Dataset3D(Dataset):
                     block[j-(pos[0]-2),i-(pos[1]-2)] = self.data[j,i]
         label = self._get_px_label(pos)
 
-        return torch.Tensor(block), label
+        return torch.Tensor(block), label, pos
 
 
 class IndianPinesDataset2D(Dataset):
@@ -118,7 +119,7 @@ class IndianPinesDataset2D(Dataset):
 
 class Dataset2D(Dataset):
 
-    def __init__(self, data:np.ndarray, gt:np.ndarray, labels_list:dict):
+    def __init__(self, data:np.ndarray, gt:np.ndarray, labels_list:dict, skip_classes:list=[]):
         super().__init__()
 
         self.data = data
@@ -127,10 +128,11 @@ class Dataset2D(Dataset):
 
         # create a list of pixels represented by a tuple of their coordinates
         self.pixels = []
-        for cl in list(self.labels_list.keys())[1:]: # from 2nd element to ignore pixels of unknown class 0
-            ys, xs = np.where(self.gt == cl) # yields an array of positons matching the current class
-            for y, x in zip(ys, xs):
-                self.pixels.append(np.array([y, x]))
+        for cl in list(self.labels_list.keys()):
+            if cl not in skip_classes:
+                ys, xs = np.where(self.gt == cl) # yields an array of positons matching the current class
+                for y, x in zip(ys, xs):
+                    self.pixels.append(np.array([y, x]))
 
     def __len__(self):
         return len(self.pixels)
@@ -152,4 +154,4 @@ class Dataset2D(Dataset):
                     block[j-(pos[0]-2),i-(pos[1]-2)] = self.data[j,i]
         label = self._get_px_label(pos)
 
-        return torch.Tensor(block).transpose(dim0=2, dim1=0), label
+        return torch.Tensor(block).transpose(dim0=2, dim1=0), label, pos
