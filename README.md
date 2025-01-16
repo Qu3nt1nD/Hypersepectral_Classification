@@ -45,6 +45,6 @@ python main.py --data ./data/pavia_university/data.yaml --nn_mode 2D --resume pa
 
 <details>
 <summary>Expand</summary>
-
+* [Papers With Code - Reference Paper](https://paperswithcode.com/paper/spectral-spatial-classification-of-2)
 * [Research Gate - Hyperspectral Image Decomposition](https://www.researchgate.net/figure/Hyperspectral-image-concept-Multi-variate-image-with-simultaneous-access-to-spectral_fig4_278786166)
 </details>
