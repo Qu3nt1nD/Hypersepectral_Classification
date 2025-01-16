@@ -1,20 +1,17 @@
 import os
-import numpy as np
-from scipy import io
-from utils import viz_img, viz_results, create_block, plot_distribution
-import yaml
-from random import shuffle
-from datetime import datetime
 import argparse
-from datasets import create_dataset
-from models import create_model
-from torch.utils.data import DataLoader, random_split
 import torch
 import torch.nn as nn
+import numpy as np
 import matplotlib.pyplot as plt
+from utils import viz_results, plot_distribution
+from models import create_model
+from datasets import create_dataset
+from torch.utils.data import DataLoader, random_split
+from torch.utils.tensorboard.writer import SummaryWriter
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, f1_score
+from datetime import datetime
 from tqdm import tqdm
-from torchvision import transforms
 
 
 def main(args):
@@ -30,7 +27,6 @@ def main(args):
 
 
     name, dataset, num_features, color_palette = create_dataset(data, nn_mode, skip_classes=[0])
-
     name = args.name if args.name is not None else name
 
     save_path = "./runs/"+name+"_"+datetime.now().strftime('%m%d%H%M')
@@ -38,7 +34,6 @@ def main(args):
 
 
     print("Creating dataset from image")
-
     train_dataset, val_dataset = random_split(dataset, [0.9, 0.1])
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -54,6 +49,8 @@ def main(args):
 
     if train:
         best_score = 0
+        writer = SummaryWriter(log_dir=save_path)
+
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
         criterion = nn.CrossEntropyLoss()
 
@@ -97,12 +94,19 @@ def main(args):
             avg_loss = epoch_loss/len(train_loader)
             avg_vloss = epoch_vloss/len(val_loader)
 
+            writer.add_scalar("Loss/train", avg_loss, epoch)
+            writer.add_scalar("Loss/val", avg_vloss, epoch)
+            writer.add_scalar("LR/lr", optimizer.param_groups[0]["lr"], epoch)
+
             print(f"F1-score : {f1:.3f}  |  Training / Validation losses : {avg_loss:.3f} / {avg_vloss:.3f}")
             # Save
             if best_score < f1:
                 print("Saving model")
                 best_score = f1
                 torch.save(model.state_dict(), os.path.join(save_path, "best.pt"))
+    
+        writer.flush()
+        writer.close()
 
     tp = 0
     fp = 0

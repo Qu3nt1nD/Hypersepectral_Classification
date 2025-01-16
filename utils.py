@@ -9,7 +9,7 @@ def viz_img(img:np.ndarray, gt:np.ndarray, labels_list:dict, rgb_bands:tuple, co
     img_rgb = (img_rgb - np.min(img_rgb)) / (np.max(img_rgb) - np.min(img_rgb))
     img_rgb = img_rgb[:,:,rgb_bands]
 
-    plt.figure(figsize=(8,4))
+    plt.figure()
     plt.subplot(1,2,1)
     plt.imshow(img_rgb)
     plt.title('Image')
