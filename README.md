@@ -40,3 +40,11 @@ python main.py --data ./data/pavia_university/data.yaml --nn_mode 2D --train
 ```
 python main.py --data ./data/pavia_university/data.yaml --nn_mode 2D --resume path_to_model --full_map
 ```
+
+# Acknowledgements
+
+<details>
+<summary>Expand</summary>
+
+* [Research Gate - Hyperspectral Image Decomposition](https://www.researchgate.net/figure/Hyperspectral-image-concept-Multi-variate-image-with-simultaneous-access-to-spectral_fig4_278786166)
+</details>
