@@ -38,6 +38,7 @@ First results without specific training methods lead to ~89% correct guesses. Fu
 
 ![First Results](./images/results.png)
 
+The least represented classes are the ones the model struggles the most on, like gravel and shadows. Otherwise, the model tends to generalize well over the rest of the image.
 
 
 ### Training
